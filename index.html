@@ -107,6 +107,25 @@
                     return error.message;
             }
         }
+
+         function checkColorScheme() {
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        // Está no modo escuro
+        document.body.classList.add('dark-mode');
+    } else {
+        // Está no modo claro
+        document.body.classList.remove('dark-mode');
+    }
+}
+
+// Chamar a função ao carregar a página
+checkColorScheme();
+
+// Adicionar um ouvinte para mudanças no modo de cor
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+    checkColorScheme();
+});
+
     </script>
 
 </body>
