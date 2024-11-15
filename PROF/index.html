@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.5.0/remixicon.css">
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <title>Teacher Panel</title>
+</head>
+<body class="dark-mode">
+    
+    <div class="content">
+        <div class="info">
+            <h1 id="class-title">Classe 9ºA</h1>
+            <div id="btns">
+                <button onclick="window.location.reload()"><i class="ri-loop-left-line"></i></button>
+                <select id="class">
+                    <option value="9ºA" selected>9ºA</option>
+                    <option value="9ºB">9ºB</option>
+                    <option value="9ºC">9ºC</option>
+                    <option value="9ºD">9ºD</option>
+                    <option value="9ºE">9ºE</option>
+                    <option value="9ºF">9ºF</option>
+                    <option value="9ºG">9ºG</option>
+                    <option value="9ºH">9ºH</option>
+                </select>
+            </div>
+        </div>
+        <div>
+           <table>
+            <thead>
+                <tr>
+                    <th>Nº</th>
+                    <th>Nome Completo</th>
+                    <th>Nota P2</th>
+                    <th>Nota Livre</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Alunos serão carregados aqui dinamicamente -->
+            </tbody>
+           </table>
+        </div>
+
+        <div class="alert-sucess">
+            <i class="ri-shield-check-line"></i>
+            <div class="infos">
+                <h3>As notas foram salvas com sucesso!</h3>
+                <p>Segurança total!</p>
+            </div>
+        </div>
+        <div class="alert-fail">
+            <i class="ri-shield-check-line"></i>
+            <div class="infos">
+                <h3>Ocorreu um erro ao salvar as notas!</h3>
+                <p>Segurança de alto nível!</p>
+            </div>
+        </div>
+    </div>
+    <button id="saveBtn"><span><i class="ri-save-fill"></i> Salvar</span></button>
+    <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore-compat.js"></script>
+    <script src="../firebaseConfig.js"></script>
+
+    <div class="loading">
+        <div class="spinner"></div>
+    </div>
+
+    <script>
+        // Inicialize o Firebase
+        const db = firebase.firestore();
+
+        async function carregarAlunosPorClasse(classeSelecionada) {
+            if (!classeSelecionada) {
+                console.error("Classe não definida");
+                return;
+            }
+
+            const tabelaBody = document.querySelector("tbody");
+            tabelaBody.innerHTML = ""; // Limpa a tabela antes de adicionar novos dados
+
+            try {
+                // Consulta para buscar alunos com a classe selecionada
+                const alunosSnapshot = await db.collection("alunos")
+                    .where("class", "==", classeSelecionada)
+                    .orderBy("number")
+                    .get();
+
+                alunosSnapshot.forEach((doc) => {
+                    const aluno = doc.data();
+                    const numero = aluno.number;
+                    const nome = aluno.name;
+                    const notaP2 = aluno.notaP2 || 0;
+                    const notaMapaMental = aluno.notaMapaMental || 0;
+
+                    // Cria uma nova linha para o aluno
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
+                        <td id="mark-td">${numero}</td>
+                        <td>${nome}</td>
+                        <td id="mark-td"><input type="number" max="10" min="0" value="${notaP2.toFixed(1)}" data-id="${doc.id}" class="notaP2"></td>
+                        <td id="mark-td2"><input type="number" max="1" min="0" value="${notaMapaMental.toFixed(1)}" data-id="${doc.id}" class="notaMapaMental"></td>
+                    `;
+                    tabelaBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error("Erro ao carregar alunos:", error);
+            }
+        }
+
+       // Função para salvar as notas
+        async function salvarNotas() {
+            const inputsNotaP2 = document.querySelectorAll(".notaP2");
+            const inputsNotaMapaMental = document.querySelectorAll(".notaMapaMental");
+            let sucesso = true;
+
+            // Atualiza as notas para cada aluno
+            for (let i = 0; i < inputsNotaP2.length; i++) {
+                const inputNotaP2 = inputsNotaP2[i];
+                const inputNotaMapaMental = inputsNotaMapaMental[i];
+                
+                const notaP2 = parseFloat(inputNotaP2.value);
+                const notaMapaMental = parseFloat(inputNotaMapaMental.value);
+                const alunoId = inputNotaP2.getAttribute("data-id");
+
+                // Verificação de valores inválidos
+                if (notaP2 < 0 || notaP2 > 10 || notaMapaMental < 0 || notaMapaMental > 1) {
+                    sucesso = false;
+                    errorAlertOpen(); // Exibe o alerta de erro
+                    setTimeout(() => {
+                        document.querySelector('.alert-fail').classList.remove('active');
+                    }, 3000);
+                    break; // Sai do loop se houver erro
+                }
+
+                try {
+                    await db.collection("alunos").doc(alunoId).update({
+                        notaP2: notaP2,
+                        notaMapaMental: notaMapaMental
+                    });
+                } catch (error) {
+                    console.error("Erro ao atualizar notas para o aluno:", alunoId, error);
+                    sucesso = false;
+                    break;
+                }
+            }
+
+            if (sucesso) {
+                salveAlertOpen();
+                setTimeout(() => {
+                    document.querySelector('.alert-sucess').classList.remove('active');
+                }, 3000);
+            }
+        }
+
+        // Funções para exibir e ocultar alertas
+        function salveAlertOpen() {
+            document.querySelector('.alert-sucess').classList.add('active');
+        }
+
+        function errorAlertOpen() {
+            document.querySelector('.alert-fail').classList.add('active');
+        }
+
+
+        // Evento para salvar notas ao clicar no botão
+        document.getElementById("saveBtn").addEventListener("click", salvarNotas);
+
+        // Carregar a classe inicial ao carregar a página
+        document.addEventListener("DOMContentLoaded", () => {
+            const classeInicial = document.getElementById("class").value;
+            carregarAlunosPorClasse(classeInicial);
+        });
+
+        // Evento para carregar os alunos quando a classe é alterada
+        document.getElementById("class").addEventListener("change", (event) => {
+            const novaClasse = event.target.value;
+            carregarAlunosPorClasse(novaClasse);
+            document.getElementById("class-title").textContent = `Classe ${novaClasse}`;
+        });
+
+        function showLoading() {
+            const loadingModal = document.querySelector('.loading');
+            loadingModal.style.display = 'flex';
+        }
+
+        function hideLoading() {
+            const loadingModal = document.querySelector('.loading');
+            loadingModal.style.display = 'none';
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            showLoading();
+
+            function gerarNumeroAleatorio() {
+                const numero = Math.floor(Math.random() * (5000 - 1000 + 1)) + 1000;
+                console.log(numero);
+                return numero;
+            }
+
+            const numero = gerarNumeroAleatorio(); // Salva o número gerado em uma variável
+
+            setTimeout(() => {
+                hideLoading();
+            }, numero); // Usa a variável 'numero' aqui no setTimeout
+        });
+    </script>
+</body>
+</html>

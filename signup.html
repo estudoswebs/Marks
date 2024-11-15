@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.5.0/remixicon.css">
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <title>Signup</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+
+    <form onsubmit="register(event)">
+        <h2>Sign Up</h2>
+
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" placeholder="Nome Completo (Real)" required>
+        
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" placeholder="Insira seu email" required>
+        
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="Crie sua senha" required>
+
+        <label for="number">Número de Chamada</label>
+        <input type="text" id="number" name="number" placeholder="Insira seu número de chamada">
+
+        <label for="class">Sala</label>
+        <select id="class">
+            <option value="9ºA" selected>9ºA</option>
+            <option value="9ºB">9ºB</option>
+            <option value="9ºC">9ºC</option>
+            <option value="9ºD">9ºD</option>
+            <option value="9ºE">9ºE</option>
+            <option value="9ºF">9ºF</option>
+            <option value="9ºG">9ºG</option>
+            <option value="9ºH">9ºH</option>
+        </select>
+
+        <button type="submit">Sign Up</button>
+
+        <div class="forgot-password">
+            <p>Já tem uma conta? </p>
+            <a href="./">Login</a>
+        </div>
+    </form>
+
+    <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore-compat.js"></script>
+    <script src="../firebaseConfig.js"></script>
+
+    <div class="loading">
+        <div class="spinner"></div>
+    </div>
+
+    <script>
+        firebase.auth().onAuthStateChanged(user => {
+            if (user) {
+                showLoadingModal();
+                setTimeout(function() {
+                    hideLoadingModal();
+                    window.location.href = './ALUNO/';
+                }, 2000);
+            }
+        });
+
+        function showLoadingModal() {
+            const loadingModal = document.querySelector(".loading");
+            loadingModal.style.display = 'flex';
+        }
+
+        function hideLoadingModal() {
+            const loadingModal = document.querySelector(".loading");
+            loadingModal.style.display = 'none';
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            showLoadingModal();
+
+            function gerarNumeroAleatorio() {
+                const numero = Math.floor(Math.random() * (5000 - 1000 + 1)) + 1000;
+                console.log(numero);
+                return numero;
+            }
+
+            const numero = gerarNumeroAleatorio(); // Salva o número gerado em uma variável
+
+            setTimeout(() => {
+                hideLoadingModal();
+            }, numero); // Usa a variável 'numero' aqui no setTimeout
+        });
+
+        function createUser(uid) {
+            const currentUser = firebase.auth().currentUser; // Obtenha o usuário autenticado
+
+            const user = {
+                email: currentUser.email,
+                name: form.userName().value,
+                class: form.class().value,
+                number: form.number().value,
+                notaP2: 0.0,
+                notaMapaMental: 0.0,
+            };
+
+            firebase.firestore()
+                .collection('alunos')
+                .doc(uid) // Define o ID do documento como o UID
+                .set(user)
+                .then(() => {
+                    console.log('Guardado no Firestore com ID:', uid);
+                })
+                .catch(error => {
+                    console.error('Erro ao salvar usuário no Firestore:', error);
+                });
+        }
+
+        function register(event) {
+            event.preventDefault(); // Impede o envio padrão do formulário
+            showLoadingModal();
+
+            const email = form.email().value;
+            const password = form.password().value;
+
+            firebase.auth().createUserWithEmailAndPassword(email, password)
+                .then(userCredential => {
+                    const uid = userCredential.user.uid; // Obtenha o UID do usuário
+                    createUser(uid); // Criar o usuário no Firestore com o UID
+                    setTimeout(function() {
+                        window.location.href = './ALUNO/';
+                    }, 500);
+                })
+                .catch(error => {
+                    hideLoadingModal();
+                    alert(getErrorMessage(error));
+                });
+        }
+
+        function getErrorMessage(error) {
+            switch (error.code) {
+                case "auth/email-already-in-use":
+                    return "O email já está em uso.";
+                case "auth/invalid-email":
+                    return "O email fornecido é inválido.";
+                case "auth/weak-password":
+                    return "A senha deve ter pelo menos 6 caracteres.";
+                default:
+                    return error.message;
+            }
+        }
+
+        const form = {
+            userName: () => document.getElementById('username'),
+            email: () => document.getElementById('email'),
+            password: () => document.getElementById('password'),
+            class: () => document.getElementById('class'),
+            number: () => document.getElementById('number')
+        };
+    </script>
+</body>
+</html>

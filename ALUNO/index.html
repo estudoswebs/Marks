@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.5.0/remixicon.css">
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <title>Student Panel</title>
+</head>
+<body>
+    <header>
+        <h1>Suas Notas,</h1>
+        <span id="name-student">Carregando..</span>
+        <button id="logout" onclick="logout()"><i class="ri-logout-box-line"></i> <span>Sair</span></button>
+    </header>
+
+    <div class="content">
+        <div class="info">
+            <div id="info-name">
+                <span id="icon-materia">Fís</span>
+            <div>
+                <span id="materia-name">Física</span>
+                <span id="prof-aplicador">Monica Sanches Piaia</span>
+            </div>
+            </div>
+            <span id="mark-top">0.0</span>
+        </div>
+        <div id="title">
+            <hr><div class="title">
+                <span>Atividades</span> <span>Notas</span>
+            </div><hr>
+        </div>
+        <div class="atividades">
+            <div id="ativ">
+                <span>Prova P2</span>
+                <b id="mark">0.0</b>
+            </div>
+            <div id="ativ">
+                <span>Mapa Mental (1,0)</span>
+                <b id="mark-mapa">0.0</b>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="loading">
+        <div class="spinner"></div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore-compat.js"></script>
+    <script src="../firebaseConfig.js"></script>
+
+    <script>
+       function showLoading() {
+            const loadingModal = document.querySelector('.loading');
+            loadingModal.style.display = 'flex';
+        }
+
+        function hideLoading() {
+            const loadingModal = document.querySelector('.loading');
+            loadingModal.style.display = 'none';
+        }
+
+        firebase.auth().onAuthStateChanged(user => {
+            showLoading()
+            if (!user) {
+                hideLoading()
+                // Usuário não está autenticado, redireciona para a página de login ou home
+                window.location.href = '../';
+            }
+        });
+
+        document.addEventListener("DOMContentLoaded", function() {
+            showLoading();
+
+            function gerarNumeroAleatorio() {
+                const numero = Math.floor(Math.random() * (5000 - 1000 + 1)) + 1000;
+                console.log(numero);
+                return numero;
+            }
+
+            const numero = gerarNumeroAleatorio(); // Salva o número gerado em uma variável
+
+            setTimeout(() => {
+                hideLoading();
+            }, numero); // Usa a variável 'numero' aqui no setTimeout
+        });
+
+    firebase.auth().onAuthStateChanged(async function(user) {
+      if (!user) {
+        console.error("Usuário não autenticado.");
+        return;
+      }
+
+      const uid = user.uid;
+      
+      const userDoc = await firebase.firestore().collection('alunos').doc(uid).get();
+
+      if (userDoc.exists) {
+        const data = userDoc.data();
+
+        function formatarNota(nota) {
+            // Se for um número inteiro, adiciona ".0" no final; caso contrário, mantém o valor original
+            return Number.isInteger(nota) ? `${nota}.0` : nota.toFixed(1);
+        }
+
+        // Atualizar nome e notas do usuário
+        document.getElementById('name-student').textContent = data.name || 'Usuário';
+        document.getElementById('mark-top').textContent = formatarNota(data.notaP2 || 0.0);
+        document.getElementById('mark').textContent = formatarNota(data.notaP2 || 0.0);
+        document.getElementById('mark-mapa').textContent = formatarNota(data.notaMapaMental || 0.0);
+
+
+      } else {
+        console.error("Documento do usuário não encontrado.");
+      }
+    });
+
+
+    function logout(){
+        firebase.auth().signOut().then(() =>{
+            window.location.href = '../';
+        }).catch(() => {
+            alert('Erro ao fazer Logout.')
+        })
+    };
+    </script>
+
+</body>
+</html>
