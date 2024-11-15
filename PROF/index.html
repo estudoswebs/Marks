@@ -6,13 +6,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.5.0/remixicon.css">
     <link rel="stylesheet" href="../assets/css/style.css">
     <title>Teacher Panel</title>
-    <style>
-        body {
-            overflow-x: hidden;
-        }
-    </style>
 </head>
-<body>
+<body class="dark-mode">
     
     <div class="content">
         <div class="info">
@@ -134,7 +129,10 @@
                     sucesso = false;
                     errorAlertOpen(); // Exibe o alerta de erro
                     setTimeout(() => {
-                        document.querySelector('.alert-fail').classList.remove('active');
+                        document.querySelector('.alert-fail').style.opacity = '0';
+                        setTimeout(() => {
+                            document.querySelector('.alert-fail').classList.remove('active');
+                        }, 500);
                     }, 3000);
                     break; // Sai do loop se houver erro
                 }
@@ -154,7 +152,10 @@
             if (sucesso) {
                 salveAlertOpen();
                 setTimeout(() => {
-                    document.querySelector('.alert-sucess').classList.remove('active');
+                    setTimeout(() => {
+                        document.querySelector('.alert-sucess').classList.remove('active');
+                    }, 500);
+                    document.querySelector('.alert-sucess').style.opacity = '0';
                 }, 3000);
             }
         }
@@ -162,10 +163,16 @@
         // Funções para exibir e ocultar alertas
         function salveAlertOpen() {
             document.querySelector('.alert-sucess').classList.add('active');
+            setTimeout(() => {
+                document.querySelector('.alert-sucess').style.opacity = '1';
+            }, 200);
         }
 
         function errorAlertOpen() {
             document.querySelector('.alert-fail').classList.add('active');
+            setTimeout(() => {
+                document.querySelector('.alert-fail').style.opacity = '1';
+            }, 200);
         }
 
 
